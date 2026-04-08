@@ -1,0 +1,63 @@
+---
+import { Code } from 'astro:components';
+
+const workflowExample = `name: CI
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Kani-Maki-Gang/bld-github-action@v1
+        with:
+          server: \${{ secrets.BLD_SERVER }}
+          token: \${{ secrets.BLD_TOKEN }}
+          pipeline: build.yaml`;
+---
+
+<section class="border-y border-zinc-800 bg-zinc-900 px-6 py-20">
+  <div class="mx-auto max-w-6xl">
+    <div class="grid gap-12 lg:grid-cols-2 lg:items-center">
+      <div>
+        <div class="flex size-12 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800">
+          <i class="iconoir-github-circle text-2xl text-white"></i>
+        </div>
+        <h2 class="mt-5 text-3xl font-bold tracking-tight text-white">
+          Integrate with GitHub Actions
+        </h2>
+        <p class="mt-4 text-base text-zinc-400">
+          Use the official <code
+            class="rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-sm text-violet-300"
+            >bld-github-action</code
+          > to trigger bld pipelines directly from your GitHub workflows. Available
+          on the GitHub Marketplace.
+        </p>
+        <a
+          href="https://github.com/Kani-Maki-Gang/bld-github-action"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="mt-6 inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors duration-150 hover:bg-zinc-800 hover:text-white"
+        >
+          <i class="iconoir-github-circle text-base"></i>
+          View on GitHub
+        </a>
+      </div>
+
+      <div class="overflow-hidden rounded-xl border border-zinc-800 shadow-xl shadow-black/30">
+        <div class="flex items-center justify-between border-b border-zinc-800 bg-zinc-950 px-4 py-2.5">
+          <div class="flex items-center gap-1.5">
+            <span class="size-3 rounded-full bg-red-500/70"></span>
+            <span class="size-3 rounded-full bg-yellow-500/70"></span>
+            <span class="size-3 rounded-full bg-green-500/70"></span>
+          </div>
+          <span class="text-xs text-zinc-500">.github/workflows/ci.yaml</span>
+          <div class="w-12"></div>
+        </div>
+        <div class="bg-zinc-900 p-4 text-sm">
+          <Code code={workflowExample} lang="yaml" theme="github-dark" />
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

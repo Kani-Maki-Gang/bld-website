@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@theme {
+  --font-inter: 'Inter', sans-serif;
+}
+
+.bg-grid {
+  background-image: url('/grid.svg');
+}

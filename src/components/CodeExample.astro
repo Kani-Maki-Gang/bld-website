@@ -1,0 +1,89 @@
+---
+import { Code } from 'astro:components';
+
+const pipelineExample = `name: build-and-test
+version: 2
+
+runs_on:
+  image: node:lts
+  pull: true
+
+variables:
+  branch: main
+
+artifacts:
+  - method: get
+    from: /app/dist
+    to: ./dist
+    after: test
+
+jobs:
+  install:
+    - working_dir: /app
+      exec:
+        - git clone -b \${{branch}} https://github.com/your-org/app .
+        - npm install
+
+  test:
+    needs:
+      - install
+    - working_dir: /app
+      exec:
+        - npm run test
+        - npm run build`;
+---
+
+<section class="px-6 py-20">
+  <div class="mx-auto max-w-6xl">
+    <div class="grid gap-12 lg:grid-cols-2 lg:items-center">
+      <div>
+        <h2 class="text-3xl font-bold tracking-tight text-white">
+          Write pipelines in YAML.<br />Run them anywhere.
+        </h2>
+        <p class="mt-4 text-base text-zinc-400">
+          Pipeline syntax is versioned independently from the tool itself.
+          Upgrade at your own pace — existing pipelines keep working.
+        </p>
+        <ul class="mt-6 space-y-3">
+          {
+            [
+              ['iconoir-check-circle', 'Version 2 with parallel job support'],
+              ['iconoir-check-circle', 'Variables and environment configuration'],
+              ['iconoir-check-circle', 'Artifact management between environments'],
+              ['iconoir-check-circle', 'Cron scheduling built in'],
+            ].map(([icon, text]) => (
+              <li class="flex items-center gap-2.5 text-sm text-zinc-300">
+                <i class={`${icon} text-violet-400 text-base shrink-0`} />
+                {text}
+              </li>
+            ))
+          }
+        </ul>
+        <a
+          href="https://kani-maki-gang.github.io/bld-book/pipelines/preface.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="mt-8 inline-flex items-center gap-1.5 text-sm font-medium text-violet-400 underline-offset-2 hover:text-violet-300 hover:underline transition-colors duration-150"
+        >
+          Read the pipeline docs
+          <i class="iconoir-arrow-right text-base"></i>
+        </a>
+      </div>
+
+      <div class="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-black/30">
+        <div class="flex items-center justify-between border-b border-zinc-800 bg-zinc-950 px-4 py-2.5">
+          <div class="flex items-center gap-1.5">
+            <span class="size-3 rounded-full bg-red-500/70"></span>
+            <span class="size-3 rounded-full bg-yellow-500/70"></span>
+            <span class="size-3 rounded-full bg-green-500/70"></span>
+          </div>
+          <span class="text-xs text-zinc-500">build-and-test.yaml</span>
+          <div class="w-12"></div>
+        </div>
+        <div class="overflow-auto p-4 text-sm">
+          <Code code={pipelineExample} lang="yaml" theme="github-dark" />
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

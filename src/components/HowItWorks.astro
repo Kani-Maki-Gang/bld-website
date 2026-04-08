@@ -1,0 +1,57 @@
+---
+const steps = [
+  {
+    number: '01',
+    title: 'Install',
+    description:
+      'Download the latest prebuilt binary from GitHub Releases. Supports Linux (musl) and Windows (mingw).',
+    code: '# github.com/Kani-Maki-Gang/bld/releases',
+  },
+  {
+    number: '02',
+    title: 'Initialize',
+    description:
+      'Run bld init in any directory to create a .bld/ folder with a config file and your first pipeline ready to go.',
+    code: 'bld init',
+  },
+  {
+    number: '03',
+    title: 'Run',
+    description:
+      'Create YAML pipeline files, define jobs and steps, then execute locally, in Docker, or push to a remote bld server.',
+    code: 'bld run -p build.yaml',
+  },
+];
+---
+
+<section class="border-y border-zinc-800 bg-zinc-900/50 px-6 py-20">
+  <div class="mx-auto max-w-6xl">
+    <div class="text-center">
+      <h2 class="text-3xl font-bold tracking-tight text-white">
+        Up and running in minutes
+      </h2>
+      <p class="mt-3 text-base text-zinc-400">
+        Three steps from zero to your first pipeline.
+      </p>
+    </div>
+
+    <div class="mt-12 grid gap-6 md:grid-cols-3">
+      {
+        steps.map((step) => (
+          <div class="flex flex-col gap-4 rounded-xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl shadow-black/30">
+            <span class="text-3xl font-bold text-violet-600/40 tabular-nums">
+              {step.number}
+            </span>
+            <div>
+              <h3 class="text-lg font-semibold text-white">{step.title}</h3>
+              <p class="mt-1.5 text-sm text-zinc-400">{step.description}</p>
+            </div>
+            <div class="mt-auto rounded-lg bg-zinc-950 px-3 py-2 font-mono text-sm text-violet-300">
+              $ {step.code}
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>

@@ -1,0 +1,71 @@
+---
+import Badge from './Badge.astro';
+---
+
+<section
+  class="flex min-h-[85vh] flex-col items-center justify-center px-6 py-24 text-center"
+>
+  <Badge text="v0.4.0 · Now Available" />
+
+  <h1
+    class="mt-6 max-w-3xl text-5xl font-bold tracking-tight text-white md:text-6xl"
+  >
+    Simple and <span class="text-violet-400">blazingly fast</span> CI/CD
+  </h1>
+
+  <p class="mt-5 max-w-xl text-lg text-zinc-400">
+    Run pipelines locally, in Docker containers, or on remote servers. Write
+    YAML, execute anywhere. Written in Rust.
+  </p>
+
+  <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+    <a
+      href="https://kani-maki-gang.github.io/bld-book/getting_started.html"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="inline-flex h-[42px] items-center rounded-lg bg-violet-600 px-5 text-sm font-medium text-white transition-colors duration-150 hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+    >
+      Get Started
+    </a>
+    <a
+      href="https://github.com/Kani-Maki-Gang/bld"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="inline-flex h-[42px] items-center gap-2 rounded-lg border border-zinc-700 px-5 text-sm font-medium text-zinc-300 transition-colors duration-150 hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-zinc-600"
+    >
+      <i class="iconoir-github-circle text-base"></i>
+      View on GitHub
+    </a>
+  </div>
+
+  <div class="mt-12 w-full max-w-xl overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-black/30">
+    <div class="flex items-center gap-1.5 border-b border-zinc-800 bg-zinc-950 px-4 py-2.5">
+      <span class="size-3 rounded-full bg-red-500/70"></span>
+      <span class="size-3 rounded-full bg-yellow-500/70"></span>
+      <span class="size-3 rounded-full bg-green-500/70"></span>
+      <span class="ml-2 text-xs text-zinc-500">terminal</span>
+    </div>
+    <div class="p-5 text-left font-mono text-sm">
+      <p>
+        <span class="text-zinc-500"># download the latest release</span>
+      </p>
+      <p>
+        <span class="text-zinc-500"># https://github.com/Kani-Maki-Gang/bld/releases</span>
+      </p>
+      <p class="mt-3">
+        <span class="text-zinc-500"># initialize a project</span>
+      </p>
+      <p>
+        <span class="text-violet-400">$</span>
+        <span class="text-zinc-200"> bld init</span>
+      </p>
+      <p class="mt-3">
+        <span class="text-zinc-500"># run a pipeline</span>
+      </p>
+      <p>
+        <span class="text-violet-400">$</span>
+        <span class="text-zinc-200"> bld run -p build.yaml</span>
+      </p>
+    </div>
+  </div>
+</section>
