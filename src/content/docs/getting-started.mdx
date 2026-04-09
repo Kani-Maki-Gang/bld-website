@@ -1,0 +1,251 @@
+---
+title: "Getting Started"
+description: "Install bld and run your first pipeline"
+---
+
+import Tabs from '../../components/docs/Tabs.astro';
+import Tab from '../../components/docs/Tab.astro';
+import Callout from '../../components/docs/Callout.astro';
+
+# Getting Started
+
+Bld is a CI/CD tool that runs pipelines in your local environment, inside Docker containers, or on remote servers. Write YAML, execute anywhere.
+
+## Installation
+
+<Tabs>
+  <Tab label="Prebuilt Binary">
+    Download the latest release for your platform from the [GitHub releases page](https://github.com/Kani-Maki-Gang/bld/releases).
+
+    Extract the binary and move it somewhere on your `PATH`:
+
+    ```bash
+    # Linux / macOS example
+    tar -xzf bld-*.tar.gz
+    mv bld /usr/local/bin/bld
+    bld --version
+    ```
+  </Tab>
+  <Tab label="Build from Source">
+    Bld is written in Rust. You'll need a [Rust toolchain](https://www.rust-lang.org/tools/install) installed.
+
+    ### External Dependencies
+
+    Install these system packages before building:
+
+    - `build-essential`
+    - `pkg-config`
+    - `libssl-dev`
+    - `libsqlite3-dev`
+    - `docker` *(optional — required for container pipelines)*
+    - `trunk` + `nodejs` *(optional — required to build the server UI)*
+
+    <Callout type="note">
+      Package names above are for Debian-based distributions. Install the equivalent packages for your distribution.
+    </Callout>
+
+    ### Build
+
+    ```bash
+    git clone https://github.com/Kani-Maki-Gang/bld.git
+    cd bld
+    cargo build --release
+    ./target/release/bld --version
+    ```
+
+    <Callout type="warning" title="Static Files Directory">
+      The `bld_server` crate embeds static files at compile time. A `build.rs` script creates the required `static_files` directory automatically, but if you encounter a build error about missing files, create the directory manually before building.
+    </Callout>
+
+    ### Server UI (optional)
+
+    ```bash
+    cd crates/bld_ui
+    trunk build
+    ```
+
+    <Callout type="note">
+      Requires `trunk` and `nodejs` installed on your system.
+    </Callout>
+  </Tab>
+  <Tab label="Musl / Mingw">
+    For static-linked builds (Linux musl) or Windows (mingw), use the included pipelines. Requires Docker or another container engine.
+
+    **With an existing `bld` binary:**
+
+    ```bash
+    bld run -p pipelines/build.yaml
+    ls dist
+    ```
+
+    **With Cargo (no bld binary yet):**
+
+    ```bash
+    cargo run -- run -p pipelines/build.yaml
+    ls dist
+    ```
+
+    This starts a container with all required dependencies, clones the repository, builds the binary, and copies it to the `dist` directory.
+  </Tab>
+</Tabs>
+
+## Creating a Project
+
+Once you have a `bld` binary available, initialize a project directory:
+
+```bash
+bld init
+```
+
+This creates a `.bld` directory with two files:
+
+- `config.yaml` — configuration for the current directory
+- `default.yaml` — a default pipeline that echoes "hello world"
+
+Run the default pipeline to verify everything works:
+
+```bash
+bld run -p default.yaml
+```
+
+## Creating Pipelines
+
+Pipelines are YAML files stored under the `.bld` directory. You can organize them in subdirectories and pass the relative path to `bld run`.
+
+For example, a project with build and deploy pipelines might look like:
+
+```
+.bld/
+├── config.yaml
+├── default.yaml
+└── sample/
+    ├── build.yaml
+    └── deploy.yaml
+```
+
+Run them with their relative path:
+
+```bash
+bld run -p sample/build.yaml
+bld run -p sample/deploy.yaml
+```
+
+## Quick Start Example
+
+<Callout type="tip" title="What you'll learn">
+  This example shows parallel jobs, external pipeline invocation, artifact collection, and variables — the core features of a real-world bld workflow.
+</Callout>
+
+Here's a three-pipeline setup that builds a .NET project, runs static analysis in parallel, and deploys the result.
+
+**Scanner pipeline** (`example-project/scanner.yaml`) — runs Sonar analysis inside a custom container:
+
+```yaml
+name: Example .net project sonar scanner pipeline
+version: 2
+runs_on:
+  dockerfile: /path/to/custom-dockerfile-for-scanner
+  tag: latest
+  name: scanner
+
+variables:
+  branch: master
+  key: ExampleProject
+  url: http://some-url-for-sonar-qube
+  login: some_login_token
+
+jobs:
+  main:
+  - git clone ${{branch}} https://some-url-for-the-repository
+  - working_dir: /example-project/src
+    exec:
+    - dotnet sonarscanner begin /k:"${{key}}" /d:sonar.host.url=${{url}} /d:sonar.login="${{login}}"
+    - dotnet build
+    - dotnet sonarscanner end /d:sonar.login="${{login}}"
+```
+
+**Build pipeline** (`example-project/build.yaml`) — compiles a release build and collects the output artifact:
+
+```yaml
+name: Example project build pipeline
+version: 2
+runs_on:
+  image: mcr.microsoft.com/dotnet/sdk:6.0-focal
+  pull: true
+
+variables:
+  branch: master
+  config: release
+
+artifacts:
+- method: get
+  from: /example-project/src/ExampleProject/bin/${{config}}/net6.0/linux-x64
+  to: /some/local/path/example-project/${{bld_run_id}}
+  after: main
+
+jobs:
+  main:
+  - git clone -b ${{branch}} https://some-url-for-the-repository
+  - cd /example-project/src/ExampleProject && dotnet build -c ${{config}}
+```
+
+**Deploy pipeline** (`example-project/deploy.yaml`) — runs scanner and build in parallel, then deploys:
+
+```yaml
+name: Example project deployment pipeline
+version: 2
+runs_on: machine
+
+variables:
+  branch: master
+
+external:
+- pipeline: example-project/scanner.yaml
+  variables:
+    branch: ${{branch}}
+- pipeline: example-project/build.yaml
+  variables:
+    branch: ${{branch}}
+
+jobs:
+  scanner:
+  - ext: example-project/scanner.yaml
+
+  build_and_deploy:
+  - ext: example-project/build.yaml
+  - scp -r /some/local/path/example-project/${{bld_run_id}} user@some-ip:/some/path/to/the/server
+```
+
+<Callout type="note">
+  `scanner` and `build_and_deploy` are separate jobs, so they run in parallel. To run them sequentially, move the scanner `ext:` call into the `build_and_deploy` job.
+</Callout>
+
+## Graceful Shutdown
+
+Bld handles `SIGINT` and `SIGTERM` to cleanly stop containers and remote runs when you press `Ctrl+C`. To stop a pipeline running on a server explicitly, use the [`bld stop`](/docs/cli/stop/) command.
+
+## GitHub Action
+
+Bld has an alpha GitHub Action called [bld-action](https://github.com/marketplace/actions/bld-action). It looks for a `.bld` directory in your repository and runs the specified pipeline.
+
+```yaml
+name: Demo workflow
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: Kani-Maki-Gang/bld-github-action@v0.2.1-alpha
+        with:
+          pipeline: 'demo_pipeline.yaml'
+          variables: |-
+            branch=main
+```
+
+<Callout type="note" title="Alpha Status">
+  The GitHub Action is in alpha. See the [GitHub Action docs](/docs/github-action/) for full configuration options.
+</Callout>

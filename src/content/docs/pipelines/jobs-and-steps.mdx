@@ -1,0 +1,236 @@
+---
+title: "Jobs and Steps"
+description: "Parallel jobs and sequential steps"
+---
+
+import Tabs from '../../../components/docs/Tabs.astro';
+import Tab from '../../../components/docs/Tab.astro';
+import Callout from '../../../components/docs/Callout.astro';
+
+# Jobs and Steps
+
+<Callout type="note" title="Version Support">
+  Jobs are supported in `version 2` only. Steps are supported in both `version 1` and `version 2`.
+</Callout>
+
+The `jobs` section defines a set of parallel execution units. Each job contains steps, which run sequentially within that job. In `version 1`, only sequential steps existed; `version 2` introduced jobs for parallel execution.
+
+## Simple commands
+
+In version 2, jobs run in parallel. Each job is a named list of commands:
+
+<Tabs>
+  <Tab label="Version 2">
+    ```yaml
+    name: Example pipeline
+    runs_on: machine
+    version: 2
+
+    jobs:
+      list_content_of_directories:
+      - ls ./some_directory
+      - ls ./some_other_directory
+      - ls ./yet_another_directory
+
+      create_sample_file:
+      - echo 'hello world' > sample_file
+
+      curl_ip_address:
+      - curl ifconfig.me
+    ```
+
+    The three jobs run in parallel.
+  </Tab>
+  <Tab label="Version 1">
+    ```yaml
+    name: Example pipeline for multiple steps
+    runs_on: machine
+    version: 1
+
+    steps:
+      - exec:
+        - ls ./some_directory
+        - ls ./some_other_directory
+        - ls ./yet_another_directory
+
+      - exec:
+        - echo 'hello world' > sample_file
+
+      - exec:
+        - curl ifconfig.me
+    ```
+
+    Steps run sequentially in order.
+  </Tab>
+</Tabs>
+
+## Calling external pipelines
+
+Use `ext:` on a step to invoke another pipeline. The pipeline is run based on its [external configuration](/docs/pipelines/external/), or locally if none is defined.
+
+<Tabs>
+  <Tab label="Version 2">
+    ```yaml
+    name: Example pipeline
+    runs_on: machine
+    version: 2
+
+    jobs:
+      main:
+      - ext: example-pipeline-1.yaml
+      - ext: example-pipeline-2.yaml
+      - echo 'hello'
+    ```
+  </Tab>
+  <Tab label="Version 1">
+    ```yaml
+    name: Example pipeline
+    runs_on: machine
+    version: 1
+
+    steps:
+      - exec:
+        - ext: example-pipeline-1.yaml
+        - ext: example-pipeline-2.yaml
+        - echo 'hello'
+    ```
+  </Tab>
+</Tabs>
+
+## Named steps
+
+For more complex operations, give a step a `name` and an `exec` list:
+
+<Tabs>
+  <Tab label="Version 2">
+    ```yaml
+    name: Example pipeline for multiple steps
+    runs_on: machine
+    version: 2
+
+    jobs:
+      main:
+      - name: List the content of directories
+        exec:
+        - ls ./some_directory
+        - ls ./some_other_directory
+        - ls ./yet_another_directory
+
+      - name: Create a sample file
+        exec:
+        - echo 'hello world' > sample_file
+
+      - name: Curl IP address
+        exec:
+        - curl ifconfig.me
+    ```
+  </Tab>
+  <Tab label="Version 1">
+    ```yaml
+    name: Example pipeline for multiple steps
+    runs_on: machine
+    version: 1
+
+    steps:
+      - name: List the content of directories
+        exec:
+        - ls ./some_directory
+        - ls ./some_other_directory
+        - ls ./yet_another_directory
+
+      - name: Create a sample file
+        exec:
+        - echo 'hello world' > sample_file
+
+      - name: Curl IP address
+        exec:
+        - curl ifconfig.me
+    ```
+  </Tab>
+</Tabs>
+
+Named steps can also include `ext` entries:
+
+<Tabs>
+  <Tab label="Version 2">
+    ```yaml
+    name: Example pipeline for calling another pipeline
+    runs_on: machine
+    version: 2
+
+    jobs:
+      main:
+      - name: Call another pipeline and list a directory
+        exec:
+        - ext: example-1.yaml
+        - ls ./some_directory
+    ```
+  </Tab>
+  <Tab label="Version 1">
+    ```yaml
+    name: Example pipeline for calling another pipeline
+    runs_on: machine
+    version: 1
+
+    steps:
+      - name: Call another pipeline and list a directory
+        exec:
+        - ext: example-1.yaml
+        - ls ./some_directory
+    ```
+  </Tab>
+</Tabs>
+
+## Working directory
+
+Use `working_dir` on a named step to set the working directory for that step's commands:
+
+<Tabs>
+  <Tab label="Version 2">
+    ```yaml
+    name: Example pipeline
+    runs_on: ubuntu
+    version: 2
+
+    jobs:
+      main:
+      - name: First step
+        working_dir: /some/working/directory
+        exec:
+        - ls ./subdirectory
+        - rm ./subdirectory/file
+
+      - name: Second step
+        working_dir: /another/working/directory
+        exec:
+        - ls ./some-other-dir/
+    ```
+  </Tab>
+  <Tab label="Version 1">
+    ```yaml
+    name: Example pipeline
+    runs_on: ubuntu
+    version: 1
+
+    steps:
+      - name: First step
+        working_dir: /some/working/directory
+        exec:
+        - ls ./subdirectory
+        - rm ./subdirectory/file
+
+      - name: Second step
+        working_dir: /another/working/directory
+        exec:
+        - ls ./some-other-dir/
+    ```
+  </Tab>
+</Tabs>
+
+<Callout type="note">
+  Named steps can be referenced from the `artifacts` section to transfer files to or from the execution platform after that step completes.
+</Callout>
+
+<Callout type="tip">
+  The `jobs` section supports expressions — variables, environment variables, and keywords can be used in any step field.
+</Callout>

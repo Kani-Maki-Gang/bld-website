@@ -1,0 +1,43 @@
+---
+import { flattenNav } from '../../data/docs-nav';
+
+interface Props {
+  currentSlug: string;
+}
+
+const { currentSlug } = Astro.props;
+const pages = flattenNav();
+const idx = pages.findIndex((p) => p.slug === currentSlug);
+const prev = idx > 0 ? pages[idx - 1] : null;
+const next = idx < pages.length - 1 ? pages[idx + 1] : null;
+---
+
+{(prev || next) && (
+  <div class="mt-12 flex items-center justify-between border-t border-zinc-800 pt-6 gap-4">
+    {prev ? (
+      <a
+        href={prev.href}
+        class="group flex flex-col gap-0.5 rounded-lg border border-zinc-800 px-4 py-3 text-sm transition-colors duration-150 hover:border-violet-500/50 hover:bg-violet-500/5 max-w-[45%]"
+      >
+        <span class="text-xs text-zinc-500 flex items-center gap-1">
+          <i class="iconoir-arrow-left text-xs"></i>
+          Previous
+        </span>
+        <span class="font-medium text-zinc-300 group-hover:text-white transition-colors truncate">{prev.title}</span>
+      </a>
+    ) : <div />}
+
+    {next ? (
+      <a
+        href={next.href}
+        class="group flex flex-col gap-0.5 rounded-lg border border-zinc-800 px-4 py-3 text-sm transition-colors duration-150 hover:border-violet-500/50 hover:bg-violet-500/5 text-right ml-auto max-w-[45%]"
+      >
+        <span class="text-xs text-zinc-500 flex items-center gap-1 justify-end">
+          Next
+          <i class="iconoir-arrow-right text-xs"></i>
+        </span>
+        <span class="font-medium text-zinc-300 group-hover:text-white transition-colors truncate">{next.title}</span>
+      </a>
+    ) : <div />}
+  </div>
+)}

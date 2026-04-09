@@ -1,0 +1,68 @@
+---
+import DocsSidebar from './DocsSidebar.astro';
+
+interface Props {
+  currentPath: string;
+}
+
+const { currentPath } = Astro.props;
+---
+
+<div class="lg:hidden">
+  <button
+    id="mobile-nav-toggle"
+    aria-label="Open navigation"
+    class="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
+  >
+    <i class="iconoir-menu text-base"></i>
+    <span>Menu</span>
+  </button>
+</div>
+
+<!-- Backdrop -->
+<div
+  id="mobile-nav-backdrop"
+  class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm hidden lg:hidden"
+></div>
+
+<!-- Drawer -->
+<div
+  id="mobile-nav-drawer"
+  class="fixed inset-y-0 left-0 z-50 w-72 -translate-x-full overflow-y-auto bg-zinc-950 border-r border-zinc-800 transition-transform duration-300 ease-in-out lg:hidden"
+>
+  <div class="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+    <a href="/" class="flex items-center gap-2">
+      <img src="/logo_no_bg.png" alt="Bld logo" class="size-6" />
+      <span class="text-sm font-semibold text-white">bld</span>
+    </a>
+    <button id="mobile-nav-close" aria-label="Close navigation" class="text-zinc-400 hover:text-white">
+      <i class="iconoir-xmark text-lg"></i>
+    </button>
+  </div>
+  <div class="px-3">
+    <DocsSidebar currentPath={currentPath} />
+  </div>
+</div>
+
+<script>
+  const toggle = document.getElementById('mobile-nav-toggle');
+  const backdrop = document.getElementById('mobile-nav-backdrop');
+  const drawer = document.getElementById('mobile-nav-drawer');
+  const close = document.getElementById('mobile-nav-close');
+
+  function open() {
+    drawer?.classList.remove('-translate-x-full');
+    backdrop?.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeNav() {
+    drawer?.classList.add('-translate-x-full');
+    backdrop?.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  toggle?.addEventListener('click', open);
+  close?.addEventListener('click', closeNav);
+  backdrop?.addEventListener('click', closeNav);
+</script>

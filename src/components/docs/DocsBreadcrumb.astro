@@ -1,0 +1,68 @@
+---
+import { docsNav, isNavSubSection } from '../../data/docs-nav';
+
+interface Props {
+  currentSlug: string;
+}
+
+const { currentSlug } = Astro.props;
+
+interface Crumb {
+  title: string;
+  href: string;
+}
+
+function buildCrumbs(slug: string): Crumb[] {
+  const crumbs: Crumb[] = [];
+
+  for (const section of docsNav) {
+    if (section.slug === slug) {
+      crumbs.push({ title: section.title, href: section.href });
+      return crumbs;
+    }
+    for (const item of section.items) {
+      if (isNavSubSection(item)) {
+        if (item.slug === slug) {
+          crumbs.push({ title: section.title, href: section.href });
+          crumbs.push({ title: item.title, href: item.href });
+          return crumbs;
+        }
+        for (const sub of item.items) {
+          if (sub.slug === slug) {
+            crumbs.push({ title: section.title, href: section.href });
+            crumbs.push({ title: item.title, href: item.href });
+            crumbs.push({ title: sub.title, href: sub.href });
+            return crumbs;
+          }
+        }
+      } else {
+        if (item.slug === slug) {
+          crumbs.push({ title: section.title, href: section.href });
+          crumbs.push({ title: item.title, href: item.href });
+          return crumbs;
+        }
+      }
+    }
+  }
+
+  return crumbs;
+}
+
+const crumbs = buildCrumbs(currentSlug);
+---
+
+{crumbs.length > 0 && (
+  <nav aria-label="Breadcrumb" class="mb-6 flex items-center gap-1.5 text-sm text-zinc-500">
+    <a href="/docs/" class="hover:text-zinc-300 transition-colors duration-150">Docs</a>
+    {crumbs.map((crumb, i) => (
+      <>
+        <i class="iconoir-nav-arrow-right text-xs"></i>
+        {i === crumbs.length - 1 ? (
+          <span class="text-zinc-300">{crumb.title}</span>
+        ) : (
+          <a href={crumb.href} class="hover:text-zinc-300 transition-colors duration-150">{crumb.title}</a>
+        )}
+      </>
+    ))}
+  </nav>
+)}

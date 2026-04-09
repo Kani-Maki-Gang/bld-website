@@ -1,0 +1,132 @@
+---
+import '../styles/global.css';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import DocsSidebar from '../components/docs/DocsSidebar.astro';
+import DocsBreadcrumb from '../components/docs/DocsBreadcrumb.astro';
+import DocsTableOfContents from '../components/docs/DocsTableOfContents.astro';
+import DocsPrevNext from '../components/docs/DocsPrevNext.astro';
+import DocsMobileNav from '../components/docs/DocsMobileNav.astro';
+
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface Props {
+  title: string;
+  description?: string;
+  headings: Heading[];
+  currentSlug: string;
+}
+
+const { title, description, headings, currentSlug } = Astro.props;
+const currentPath = Astro.url.pathname;
+const pageTitle = `${title} — bld docs`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{pageTitle}</title>
+    {description && <meta name="description" content={description} />}
+    <meta property="og:title" content={pageTitle} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:image" content="/logo.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="/logo_no_bg.png" type="image/png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/gh/iconoir-icons/iconoir@main/css/iconoir.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-zinc-950 font-inter text-white antialiased">
+    <Navbar />
+
+    <div class="mx-auto max-w-[90rem]">
+      <div class="lg:grid lg:grid-cols-[16rem_1fr] xl:grid-cols-[16rem_1fr_13rem]">
+        <!-- Desktop sidebar -->
+        <aside class="hidden lg:block border-r border-zinc-800 px-3 lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:overflow-y-auto">
+          <DocsSidebar currentPath={currentPath} />
+        </aside>
+
+        <!-- Main content -->
+        <main class="min-w-0 px-6 py-10 lg:px-10">
+          <!-- Mobile nav trigger (shown above content on small screens) -->
+          <div class="mb-6 flex items-center gap-3 lg:hidden">
+            <DocsMobileNav currentPath={currentPath} />
+            <DocsBreadcrumb currentSlug={currentSlug} />
+          </div>
+
+          <!-- Desktop breadcrumb -->
+          <div class="hidden lg:block">
+            <DocsBreadcrumb currentSlug={currentSlug} />
+          </div>
+
+          <article class="prose prose-invert prose-docs max-w-none
+            prose-headings:scroll-mt-20
+            prose-a:no-underline prose-a:font-medium hover:prose-a:underline
+            prose-code:rounded prose-code:px-1 prose-code:py-0.5 prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
+            prose-pre:rounded-xl prose-pre:border prose-pre:border-zinc-800
+            prose-img:rounded-xl prose-img:border prose-img:border-zinc-800 prose-img:mx-auto
+            prose-table:w-full prose-thead:bg-zinc-900 prose-th:px-4 prose-th:py-2 prose-td:px-4 prose-td:py-2
+          ">
+            <slot />
+          </article>
+
+          <DocsPrevNext currentSlug={currentSlug} />
+        </main>
+
+        <!-- Table of contents (xl+) -->
+        <div class="hidden xl:block border-l border-zinc-800 px-6">
+          <DocsTableOfContents headings={headings} />
+        </div>
+      </div>
+    </div>
+
+    <Footer />
+
+    <!-- Copy buttons for code blocks -->
+    <script>
+      document.querySelectorAll('article pre').forEach((pre) => {
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'relative';
+        pre.parentNode?.insertBefore(wrapper, pre);
+        wrapper.appendChild(pre);
+
+        const btn = document.createElement('button');
+        btn.innerHTML = '<i class="iconoir-copy text-sm"></i>';
+        btn.title = 'Copy code';
+        btn.className = 'absolute top-3 right-3 flex items-center justify-center size-7 rounded-md bg-zinc-800 text-zinc-400 opacity-0 transition-opacity duration-150 hover:bg-zinc-700 hover:text-white copy-btn';
+        wrapper.appendChild(btn);
+
+        wrapper.addEventListener('mouseenter', () => btn.style.opacity = '1');
+        wrapper.addEventListener('mouseleave', () => {
+          if (!btn.dataset.copied) btn.style.opacity = '0';
+        });
+
+        btn.addEventListener('click', async () => {
+          const code = pre.querySelector('code')?.textContent ?? pre.textContent ?? '';
+          await navigator.clipboard.writeText(code);
+          btn.innerHTML = '<i class="iconoir-check text-sm text-green-400"></i>';
+          btn.dataset.copied = 'true';
+          btn.style.opacity = '1';
+          setTimeout(() => {
+            btn.innerHTML = '<i class="iconoir-copy text-sm"></i>';
+            delete btn.dataset.copied;
+          }, 2000);
+        });
+      });
+    </script>
+  </body>
+</html>

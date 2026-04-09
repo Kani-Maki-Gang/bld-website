@@ -1,0 +1,46 @@
+---
+---
+
+<div class="not-prose my-6" data-tabs>
+  <div class="flex gap-1 overflow-x-auto border-b border-zinc-800 pb-0" data-tab-bar></div>
+  <div class="pt-4">
+    <slot />
+  </div>
+</div>
+
+<script>
+  function initTabs(tabs: Element) {
+    const bar = tabs.querySelector('[data-tab-bar]') as HTMLElement;
+    const panels = tabs.querySelectorAll<HTMLElement>('[data-tab-panel]');
+    if (!bar || panels.length === 0) return;
+
+    function activate(index: number) {
+      panels.forEach((p, i) => {
+        p.style.display = i === index ? '' : 'none';
+      });
+      bar.querySelectorAll<HTMLButtonElement>('button').forEach((btn, i) => {
+        if (i === index) {
+          btn.classList.add('border-b-2', 'border-violet-500', 'text-violet-300');
+          btn.classList.remove('text-zinc-400');
+        } else {
+          btn.classList.remove('border-b-2', 'border-violet-500', 'text-violet-300');
+          btn.classList.add('text-zinc-400');
+        }
+      });
+    }
+
+    panels.forEach((panel, i) => {
+      const label = panel.dataset.label ?? `Tab ${i + 1}`;
+      const btn = document.createElement('button');
+      btn.textContent = label;
+      btn.className =
+        'px-3 py-2 text-sm font-medium transition-colors duration-150 hover:text-white whitespace-nowrap -mb-px ' +
+        (i === 0 ? 'border-b-2 border-violet-500 text-violet-300' : 'text-zinc-400');
+      btn.addEventListener('click', () => activate(i));
+      bar.appendChild(btn);
+      if (i !== 0) panel.style.display = 'none';
+    });
+  }
+
+  document.querySelectorAll('[data-tabs]').forEach(initTabs);
+</script>
