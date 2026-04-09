@@ -1,0 +1,34 @@
+---
+title: "Pipelines"
+description: "Pipeline syntax overview and versioning"
+---
+
+import Callout from '../../../components/docs/Callout.astro';
+
+# Pipeline syntax
+
+Bld pipelines are built with backwards compatibility in mind — after a bld update, existing pipelines will not break even if new functionality is introduced or the pipeline structure changes altogether.
+
+This is achieved through a version number that is separate from the release version of bld. When a breaking change is introduced in the pipeline syntax to support new features, the pipeline version is incremented. All existing pipelines continue to execute with the feature set they were designed for. This lets you migrate to a new pipeline syntax at your leisure.
+
+The current available versions are **Version 1** and **Version 2** (latest).
+
+## Feature comparison
+
+| Feature | Version 1 | Version 2 |
+|---------|:---------:|:---------:|
+| Execute commands on the host machine | <i class="iconoir-check text-green-400"></i> | <i class="iconoir-check text-green-400"></i> |
+| Execute on an existing container image | <i class="iconoir-check text-green-400"></i> | <i class="iconoir-check text-green-400"></i> |
+| Pull a container image automatically | <i class="iconoir-xmark text-zinc-500"></i> | <i class="iconoir-check text-green-400"></i> |
+| Build a container from a Dockerfile | <i class="iconoir-xmark text-zinc-500"></i> | <i class="iconoir-check text-green-400"></i> |
+| Execute on a remote host via SSH | <i class="iconoir-xmark text-zinc-500"></i> | <i class="iconoir-check text-green-400"></i> |
+| Run parallel jobs | <i class="iconoir-xmark text-zinc-500"></i> | <i class="iconoir-check text-green-400"></i> |
+| Variables | <i class="iconoir-check text-green-400"></i> | <i class="iconoir-check text-green-400"></i> |
+| Environment variables | <i class="iconoir-check text-green-400"></i> | <i class="iconoir-check text-green-400"></i> |
+| Call child pipelines with variables | <i class="iconoir-check text-green-400"></i> | <i class="iconoir-check text-green-400"></i> |
+| Prevent disposal of platform after run | <i class="iconoir-check text-green-400"></i> | <i class="iconoir-check text-green-400"></i> |
+| Scheduled execution (cron) | <i class="iconoir-xmark text-zinc-500"></i> | <i class="iconoir-check text-green-400"></i> |
+
+<Callout type="tip">
+  New projects should use <strong>Version 2</strong>. Version 1 is supported for backwards compatibility.
+</Callout>

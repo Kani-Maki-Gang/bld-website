@@ -1,0 +1,452 @@
+---
+title: "Pipeline Reference — Version 1"
+description: "Complete YAML reference for bld pipeline version 1 — sequential steps, machine and container execution"
+---
+
+import VersionBadge from '../../../components/docs/VersionBadge.astro';
+import PropDef from '../../../components/docs/PropDef.astro';
+import Callout from '../../../components/docs/Callout.astro';
+
+# Pipeline Version 1
+
+Version 1 is the original pipeline format. It executes steps sequentially on the host machine or an existing container image. All keys documented here are available in `version: 1` pipelines.
+
+<Callout type="note" title="Looking for parallel jobs, SSH, or Dockerfile support?">
+  Those features require [Version 2](/docs/pipelines/v2/). See the [feature comparison](/docs/pipelines/) for details.
+</Callout>
+
+A complete example showing the major features together:
+
+```yaml
+name: Build project
+version: 1
+runs_on: ubuntu
+
+variables:
+  branch: master
+
+environment:
+  BUILD_ENV: production
+
+external:
+- name: setup
+  pipeline: setup.yaml
+
+artifacts:
+- method: get
+  from: /output
+  to: /local/output
+  after: Build step
+
+steps:
+- name: Clone repository
+  exec:
+  - git clone -b bld:var:branch https://example.com/repo
+
+- name: Build step
+  working_dir: /repo
+  exec:
+  - make build
+```
+
+---
+
+<h2 id="version">version</h2>
+
+<PropDef name="version" type="integer" required={true} versions="V1">
+  Declares this pipeline as version 1. Must be set to <code>1</code> for the V1 runner to execute it. Pipeline versions are independent of the bld release version.
+</PropDef>
+
+```yaml
+version: 1
+```
+
+---
+
+<h2 id="name">name <VersionBadge version="both" /></h2>
+
+<PropDef name="name" type="string" required={false} versions="V1, V2">
+  Printed at the start of the pipeline's execution. Supports expressions — variables, environment variables, and keywords can be used in the value.
+</PropDef>
+
+```yaml
+name: My pipeline
+```
+
+---
+
+<h2 id="runs_on">runs_on <VersionBadge version="both" /></h2>
+
+<PropDef name="runs_on" type="string | map" required={true} versions="V1, V2">
+  Defines where pipeline commands execute. Version 1 supports <strong>machine</strong> and <strong>existing container image</strong> targets.
+</PropDef>
+
+### Machine
+
+Commands execute directly on the host machine. Bld creates a temporary directory at `.bld/tmp/<uuid>` for the run, which is cleaned up afterward.
+
+```yaml
+runs_on: machine
+```
+
+### Container — Existing Image
+
+Creates a container from an image that must already exist locally. You are responsible for maintaining the image.
+
+```yaml
+runs_on: ubuntu
+```
+
+<Callout type="note">
+  Pulling images automatically, building from a Dockerfile, or running on a remote host via SSH require [Version 2](/docs/pipelines/v2/).
+</Callout>
+
+---
+
+<h2 id="dispose">dispose <VersionBadge version="both" /></h2>
+
+<PropDef name="dispose" type="boolean" required={false} default="false" versions="V1, V2">
+  When set to <code>true</code>, bld will not clean up the platform after a run finishes.
+</PropDef>
+
+For the **machine** platform, the temporary directory under `.bld/tmp/` is preserved. For the **container** platform, the container is not stopped or removed. The `dispose` field has no effect on the SSH platform (version 2 only) since the connection closes when the run ends.
+
+```yaml
+dispose: true
+```
+
+---
+
+<h2 id="variables">variables <VersionBadge version="both" /></h2>
+
+<PropDef name="variables" type="map" required={false} versions="V1, V2">
+  A key-value map where each key is a variable name and the value is its default. Variables can be overridden at runtime with the <code>-v</code> flag.
+</PropDef>
+
+Reference a variable with the `bld:var:name` prefix:
+
+```yaml
+name: Example pipeline
+version: 1
+runs_on: machine
+
+variables:
+  directory: /home/user/target_directory
+
+steps:
+- name: List target directory
+  exec:
+  - ls bld:var:directory
+```
+
+Override at runtime:
+
+```bash
+bld run -p example.yaml -v directory=/home/user/another_directory
+```
+
+Multiple variables:
+
+```yaml
+variables:
+  first_directory: /home/user/target_directory
+  second_directory: /home/user/another_directory
+  third_directory: /home/user/yet_another_directory
+
+steps:
+- name: List all directories
+  exec:
+  - ls bld:var:first_directory
+  - ls bld:var:second_directory
+  - ls bld:var:third_directory
+```
+
+<Callout type="note">
+  Variable default values support expressions — you can reference other variables, environment variables, or built-in keywords as a default value.
+</Callout>
+
+---
+
+<h2 id="environment">environment <VersionBadge version="both" /></h2>
+
+<PropDef name="environment" type="map" required={false} versions="V1, V2">
+  A key-value map of environment variables injected into the pipeline run. Supports the <code>bld:env:name</code> expression prefix or the native shell form <code>$name</code>.
+</PropDef>
+
+```yaml
+name: Example pipeline
+version: 1
+runs_on: machine
+
+environment:
+  first_directory: /home/user/target_directory
+  second_directory: /home/user/another_directory
+
+steps:
+- name: List directories
+  exec:
+  - ls bld:env:first_directory
+  - ls $second_directory
+```
+
+Override at runtime with `-e` or `--environment`:
+
+```bash
+bld run -p example.yaml -e first_directory=some_path -e second_directory=some_other_path
+```
+
+<Callout type="note">
+  Environment variable default values support expressions — variables, other environment variables, or keywords can be used.
+</Callout>
+
+---
+
+<h2 id="keywords">keywords <VersionBadge version="1" /></h2>
+
+<PropDef name="(built-in keywords)" type="expression" required={false} versions="V1">
+  Built-in read-only values available in any pipeline expression. In version 1, keywords use the <code>bld:run:</code> prefix.
+</PropDef>
+
+| Keyword | Description |
+|---------|-------------|
+| `bld:run:root_dir` | Path to the `.bld` directory of the project |
+| `bld:run:id` | Unique UUID for this pipeline run |
+| `bld:run:start_time` | Start time of the pipeline run |
+
+```yaml
+version: 1
+runs_on: machine
+
+steps:
+- exec:
+  - echo bld:run:root_dir
+  - echo bld:run:id
+  - echo bld:run:start_time
+```
+
+<Callout type="note">
+  Version 2 adds a fourth keyword (`bld_project_dir`) and uses a different `${{bld_*}}` syntax. See [Version 2 keywords](/docs/pipelines/v2/#keywords).
+</Callout>
+
+---
+
+<h2 id="external">external <VersionBadge version="both" /></h2>
+
+<PropDef name="external" type="list" required={false} versions="V1, V2">
+  Declares references to other pipelines (local or on a remote server) that can be invoked from steps using <code>ext:</code>.
+</PropDef>
+
+**Simple inline call** — no external section needed:
+
+```yaml
+runs_on: ubuntu
+version: 1
+
+steps:
+- exec:
+  - ext: child.yaml
+```
+
+**Named external with variables** — define an entry so you can pass variables or environment variables:
+
+```yaml
+runs_on: ubuntu
+version: 1
+
+external:
+- pipeline: child.yaml
+  variables:
+    some-variable: an example value
+
+steps:
+- exec:
+  - ext: child.yaml
+```
+
+**Named entries with aliases** — useful when the same pipeline is called with different configurations:
+
+```yaml
+runs_on: ubuntu
+version: 1
+
+variables:
+  some-variable: an example value
+
+external:
+- name: Call child.yaml with a variable
+  pipeline: child.yaml
+  variables:
+    some-variable: bld:var:some-variable
+
+- name: Call child.yaml on a server
+  pipeline: child.yaml
+  server: demo_server
+  variables:
+    some-variable: an example value
+
+steps:
+- exec:
+  - ext: Call child.yaml with a variable
+  - ext: Call child.yaml on a server
+```
+
+You can also pass environment variables to child pipelines:
+
+```yaml
+external:
+- name: Execute child pipeline
+  pipeline: child.yaml
+  variables:
+  - variable1: hello
+  environment:
+  - env1: hello world
+```
+
+<Callout type="note">
+  The external section supports expressions in <code>name</code>, <code>server</code>, <code>pipeline</code>, <code>variables</code>, and <code>environment</code> fields.
+</Callout>
+
+---
+
+<h2 id="artifacts">artifacts <VersionBadge version="both" /></h2>
+
+<PropDef name="artifacts" type="list" required={false} versions="V1, V2">
+  Transfers files to or from the execution platform during a run. Supports <code>get</code> (retrieve from container) and <code>push</code> (send to container).
+</PropDef>
+
+Retrieve a file from a container after a step completes:
+
+```yaml
+name: Example pipeline
+runs_on: ubuntu
+version: 1
+
+artifacts:
+- method: get
+  from: /sample_file
+  to: /home/user/some_directory
+  after: Echo step
+
+steps:
+- name: Echo step
+  exec:
+  - echo 'hello world' > sample_file
+- name: Another step
+  exec:
+  - echo 'hello again'
+```
+
+The `after` field specifies the step name after which the transfer occurs. Omit `after` to run the transfer before any steps execute. The `from` and `to` fields support expressions.
+
+---
+
+<h2 id="steps">steps <VersionBadge version="1" /></h2>
+
+<PropDef name="steps" type="list" required={true} versions="V1">
+  Defines the sequential execution units of the pipeline. Steps run one after another in the order they are defined.
+</PropDef>
+
+<Callout type="note">
+  Version 2 replaces <code>steps</code> with <code>jobs</code> for parallel execution. See [Version 2 jobs](/docs/pipelines/v2/#jobs).
+</Callout>
+
+### Simple exec
+
+The simplest form — a list of shell commands under `exec`:
+
+```yaml
+name: Example pipeline
+runs_on: machine
+version: 1
+
+steps:
+- exec:
+  - ls ./some_directory
+  - ls ./some_other_directory
+
+- exec:
+  - echo 'hello world' > sample_file
+
+- exec:
+  - curl ifconfig.me
+```
+
+### Named steps
+
+Give a step a `name` and an `exec` list for clarity and artifact targeting:
+
+```yaml
+name: Example pipeline
+runs_on: machine
+version: 1
+
+steps:
+- name: List directories
+  exec:
+  - ls ./some_directory
+  - ls ./some_other_directory
+
+- name: Create file
+  exec:
+  - echo 'hello world' > sample_file
+```
+
+### Working directory
+
+Use `working_dir` to set the working directory for a step's commands:
+
+```yaml
+name: Example pipeline
+runs_on: ubuntu
+version: 1
+
+steps:
+- name: First step
+  working_dir: /some/working/directory
+  exec:
+  - ls ./subdirectory
+  - rm ./subdirectory/file
+
+- name: Second step
+  working_dir: /another/working/directory
+  exec:
+  - ls ./some-other-dir/
+```
+
+### Calling external pipelines in steps
+
+Use `ext:` inside an `exec` list to invoke another pipeline:
+
+```yaml
+name: Example pipeline
+runs_on: machine
+version: 1
+
+steps:
+- name: Call another pipeline
+  exec:
+  - ext: example-1.yaml
+  - ls ./some_directory
+```
+
+<Callout type="note">
+  Named steps can be referenced from the <code>artifacts</code> section to transfer files after that step completes.
+</Callout>
+
+---
+
+<h2 id="validation">validation</h2>
+
+Pipelines are validated before every run. Validation also runs when a pipeline is pushed to a bld server, or manually via `bld check`.
+
+### external → pipeline
+Checks if the pipeline file path exists.
+
+### external → server
+Checks if the server name is found in `.bld/config.yaml`.
+
+### steps → exec → ext
+Checks if the external key is found either as a local pipeline file or a declared entry in the `external` section.
+
+### artifacts → after
+Checks if the step name in the `after` field is found in the pipeline's steps.

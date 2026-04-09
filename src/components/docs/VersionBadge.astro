@@ -1,0 +1,33 @@
+---
+interface Props {
+  version: '1' | '2' | 'both';
+}
+
+const { version } = Astro.props;
+
+const config = {
+  both: {
+    label: 'V1 + V2',
+    classes: 'border-green-500/30 bg-green-500/10 text-green-300',
+  },
+  '2': {
+    label: 'V2 only',
+    classes: 'border-violet-500/30 bg-violet-500/10 text-violet-300',
+  },
+  '1': {
+    label: 'V1 only',
+    classes: 'border-zinc-600/50 bg-zinc-800/60 text-zinc-400',
+  },
+};
+
+const c = config[version];
+---
+
+<span
+  class:list={[
+    'not-prose ml-2 inline-flex items-center rounded-full border px-2 py-0.5 align-middle text-xs font-medium',
+    c.classes,
+  ]}
+>
+  {c.label}
+</span>

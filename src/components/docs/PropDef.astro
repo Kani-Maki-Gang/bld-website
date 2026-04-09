@@ -1,0 +1,38 @@
+---
+interface Props {
+  name: string;
+  type: string;
+  required?: boolean;
+  default?: string;
+  versions: string;
+}
+
+const { name, type, required = false, default: defaultVal, versions } = Astro.props;
+---
+
+<div class="not-prose my-4 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
+  <div class="flex items-center gap-3 border-b border-zinc-800 px-4 py-3">
+    <code class="text-base font-semibold text-violet-300">{name}</code>
+    <span class="rounded-md border border-zinc-700 bg-zinc-800 px-1.5 py-0.5 font-mono text-xs text-zinc-400">
+      {type}
+    </span>
+    {required ? (
+      <span class="rounded-md border border-amber-600/40 bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-300">
+        required
+      </span>
+    ) : (
+      <span class="rounded-md border border-zinc-700 bg-zinc-800/50 px-1.5 py-0.5 text-xs font-medium text-zinc-500">
+        optional
+      </span>
+    )}
+    <span class="ml-auto text-xs text-zinc-500">{versions}</span>
+  </div>
+  {(defaultVal !== undefined) && (
+    <div class="border-b border-zinc-800 px-4 py-2 text-xs text-zinc-500">
+      Default: <code class="text-zinc-400">{defaultVal}</code>
+    </div>
+  )}
+  <div class="px-4 py-3 text-sm leading-relaxed text-zinc-400">
+    <slot />
+  </div>
+</div>

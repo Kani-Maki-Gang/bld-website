@@ -68,20 +68,7 @@ jobs:
         </a>
       </div>
 
-      <div class="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-black/30">
-        <div class="flex items-center justify-between border-b border-zinc-800 bg-zinc-950 px-4 py-2.5">
-          <div class="flex items-center gap-1.5">
-            <span class="size-3 rounded-full bg-red-500/70"></span>
-            <span class="size-3 rounded-full bg-yellow-500/70"></span>
-            <span class="size-3 rounded-full bg-green-500/70"></span>
-          </div>
-          <span class="text-xs text-zinc-500">build-and-test.yaml</span>
-          <div class="w-12"></div>
-        </div>
-        <div class="overflow-auto p-4 text-sm">
-          <Code code={pipelineExample} lang="yaml" theme="github-dark" />
-        </div>
-      </div>
+      <Code class="overflow-auto rounded-xl p-4 text-sm" code={pipelineExample} lang="yaml" theme="github-dark" />
     </div>
   </div>
 </section>

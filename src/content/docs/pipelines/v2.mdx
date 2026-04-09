@@ -1,0 +1,660 @@
+---
+title: "Pipeline Reference — Version 2"
+description: "Complete YAML reference for bld pipeline version 2 — parallel jobs, SSH, Dockerfile support, and advanced expressions"
+---
+
+import VersionBadge from '../../../components/docs/VersionBadge.astro';
+import PropDef from '../../../components/docs/PropDef.astro';
+import Callout from '../../../components/docs/Callout.astro';
+
+# Pipeline Version 2
+
+Version 2 is the current recommended pipeline format. It adds parallel job execution, SSH targets, Dockerfile-based containers, image pulling, and an improved expression syntax.
+
+A complete example showing the major features together:
+
+```yaml
+name: Build and deploy
+version: 2
+
+runs_on:
+  image: ubuntu:22.04
+  pull: true
+
+variables:
+  branch: main
+  output_dir: /dist
+
+environment:
+  CI: "true"
+
+cron: 0 9 * * 1-5
+
+external:
+- name: Run tests
+  pipeline: test.yaml
+  variables:
+    branch: ${{branch}}
+
+artifacts:
+- method: get
+  from: /dist
+  to: ./local-dist
+  after: build
+
+jobs:
+  setup:
+  - ext: Run tests
+
+  build:
+  - name: Compile
+    working_dir: /app
+    exec:
+    - make build OUTPUT=${{output_dir}}
+```
+
+---
+
+<h2 id="version">version</h2>
+
+<PropDef name="version" type="integer" required={true} versions="V2">
+  Declares this pipeline as version 2. Must be set to <code>2</code> for the V2 runner to execute it. Pipeline versions are independent of the bld release version.
+</PropDef>
+
+```yaml
+version: 2
+```
+
+---
+
+<h2 id="name">name <VersionBadge version="both" /></h2>
+
+<PropDef name="name" type="string" required={false} versions="V1, V2">
+  Printed at the start of the pipeline's execution. Supports expressions — variables, environment variables, and keywords can be used in the value.
+</PropDef>
+
+```yaml
+name: My pipeline
+```
+
+---
+
+<h2 id="runs_on">runs_on <VersionBadge version="both" /></h2>
+
+<PropDef name="runs_on" type="string | map" required={true} versions="V1, V2">
+  Defines where pipeline commands execute. Version 2 supports all five targets: machine, existing container image, pulled image, Dockerfile-built image, and SSH.
+</PropDef>
+
+### Machine
+
+Commands execute directly on the host machine. Bld creates a temporary directory at `.bld/tmp/<uuid>` for the run, cleaned up afterward.
+
+```yaml
+runs_on: machine
+```
+
+### Container — Existing Image
+
+Creates a container from an image that must already exist locally.
+
+```yaml
+runs_on: ubuntu
+```
+
+### Container — Pull Image
+
+Pulls the image if missing, then creates a container. Set `pull: true` to enable automatic pulling.
+
+```yaml
+runs_on:
+  image: ubuntu
+  pull: true
+```
+
+Specify a tag:
+
+```yaml
+runs_on:
+  image: ubuntu:22.04
+  pull: true
+```
+
+Use a specific Docker URL from your configuration:
+
+```yaml
+runs_on:
+  image: ubuntu:22.04
+  pull: true
+  docker_url: unix_socket_docker_url
+```
+
+Pull from a registry defined in your config or inline:
+
+```yaml
+# Registry from global config
+runs_on:
+  image: ubuntu:22.04
+  pull: true
+  registry: ghcr
+
+# Inline registry
+runs_on:
+  image: ubuntu:22.04
+  pull: true
+  registry:
+    url: ghcr.io
+    username: some_username
+    password: some_password
+```
+
+### Container — Dockerfile
+
+Builds a custom image from a Dockerfile, then creates a container.
+
+```yaml
+runs_on:
+  dockerfile: /path/to/dockerfile
+  name: custom-image
+  tag: latest
+```
+
+With a specific Docker URL:
+
+```yaml
+runs_on:
+  dockerfile: /path/to/dockerfile
+  name: custom-image
+  tag: latest
+  docker_url: unix_socket_docker_url
+```
+
+### SSH
+
+Commands execute on a remote host over SSH. Reference a named profile from `.bld/config.yaml`:
+
+```yaml
+runs_on:
+  ssh_config: my_global_ssh_config_key
+```
+
+Or configure the connection inline. Three authentication methods are available:
+
+**Password:**
+
+```yaml
+runs_on:
+  host: 127.0.0.1
+  port: 22
+  user: some_user
+  userauth:
+    type: password
+    password: the_user_password
+```
+
+**SSH keys:**
+
+```yaml
+runs_on:
+  host: 127.0.0.1
+  user: some_user
+  userauth:
+    type: keys
+    public_key: /path/to/public_key
+    private_key: /path/to/private_key
+```
+
+`private_key` is required. `public_key` is optional.
+
+**SSH agent:**
+
+```yaml
+runs_on:
+  host: 127.0.0.1
+  user: some_user
+  userauth:
+    type: agent
+```
+
+The `port` field is optional and defaults to `22`. See [SSH server configuration](/docs/server/ssh/) for defining global SSH profiles.
+
+---
+
+<h2 id="cron">cron <VersionBadge version="2" /></h2>
+
+<PropDef name="cron" type="string" required={false} versions="V2 only">
+  Schedules automatic execution using cron syntax. Only applies to server runs — local runs ignore this field.
+</PropDef>
+
+```yaml
+cron: 0 9 * * 1-5
+```
+
+The schedule uses standard cron syntax: `second minute hour day-of-month month day-of-week`.
+
+Example — run every 10 seconds:
+
+```yaml
+cron: 10 * * * * * *
+```
+
+<Callout type="note">
+  The <code>cron</code> field schedules a run with the pipeline's default variable and environment values. For parameterized scheduled jobs, use the <a href="/docs/cli/cron/"><code>bld cron</code></a> CLI command instead.
+</Callout>
+
+---
+
+<h2 id="dispose">dispose <VersionBadge version="both" /></h2>
+
+<PropDef name="dispose" type="boolean" required={false} default="false" versions="V1, V2">
+  When set to <code>true</code>, bld will not clean up the platform after a run finishes.
+</PropDef>
+
+For the **machine** platform, the temporary directory under `.bld/tmp/` is preserved. For the **container** platform, the container is not stopped or removed. The `dispose` field has no effect on the SSH platform since the connection closes when the run ends.
+
+```yaml
+dispose: true
+```
+
+---
+
+<h2 id="variables">variables <VersionBadge version="both" /></h2>
+
+<PropDef name="variables" type="map" required={false} versions="V1, V2">
+  A key-value map where each key is a variable name and the value is its default. Variables can be overridden at runtime with the <code>-v</code> flag.
+</PropDef>
+
+Reference a variable with the `${{name}}` syntax:
+
+```yaml
+name: Example pipeline
+version: 2
+runs_on: machine
+
+variables:
+  directory: /home/user/target_directory
+
+jobs:
+  main:
+  - ls ${{directory}}
+```
+
+Override at runtime:
+
+```bash
+bld run -p example.yaml -v directory=/home/user/another_directory
+```
+
+Multiple variables:
+
+```yaml
+variables:
+  first_directory: /home/user/target_directory
+  second_directory: /home/user/another_directory
+  third_directory: /home/user/yet_another_directory
+
+jobs:
+  main:
+  - ls ${{first_directory}}
+  - ls ${{second_directory}}
+  - ls ${{third_directory}}
+```
+
+```bash
+bld run -p example.yaml \
+  -v first_directory=some_path \
+  -v second_directory=some_other_path \
+  -v third_directory=some_yet_another_path
+```
+
+<Callout type="note">
+  Variable default values support expressions — you can reference other variables, environment variables, or built-in keywords. Version 1 uses the `bld:var:name` prefix instead of `${{name}}`.
+</Callout>
+
+---
+
+<h2 id="environment">environment <VersionBadge version="both" /></h2>
+
+<PropDef name="environment" type="map" required={false} versions="V1, V2">
+  A key-value map of environment variables injected into the pipeline run. Supports both the `${{name}}` expression syntax and the native shell form `$name`.
+</PropDef>
+
+```yaml
+name: Example pipeline
+version: 2
+runs_on: machine
+
+environment:
+  first_directory: /home/user/target_directory
+  second_directory: /home/user/another_directory
+
+jobs:
+  main:
+  - name: List directories
+    exec:
+    - ls ${{first_directory}}
+    - ls $second_directory
+```
+
+Override at runtime with `-e` or `--environment`:
+
+```bash
+bld run -p example.yaml -e first_directory=some_path -e second_directory=some_other_path
+```
+
+<Callout type="note">
+  Environment variable default values support expressions. Version 1 uses the <code>bld:env:name</code> prefix.
+</Callout>
+
+---
+
+<h2 id="keywords">keywords <VersionBadge version="both" /></h2>
+
+<PropDef name="(built-in keywords)" type="expression" required={false} versions="V1, V2">
+  Built-in read-only values available in any pipeline expression. In version 2, keywords use the `${{bld_*}}` syntax.
+</PropDef>
+
+| Keyword | Description |
+|---------|-------------|
+| `${{bld_root_dir}}` | Path to the `.bld` directory of the project |
+| `${{bld_project_dir}}` | Path to the project directory (parent of `.bld`) |
+| `${{bld_run_id}}` | Unique UUID for this pipeline run |
+| `${{bld_start_time}}` | Start time of the pipeline run |
+
+```yaml
+version: 2
+runs_on: machine
+
+jobs:
+  main:
+  - echo ${{bld_root_dir}}
+  - echo ${{bld_project_dir}}
+  - echo ${{bld_run_id}}
+  - echo ${{bld_start_time}}
+```
+
+<Callout type="note">
+  Version 2 adds <code>bld_project_dir</code> which is not available in version 1. Version 1 uses the <code>bld:run:</code> prefix and has three keywords: <code>root_dir</code>, <code>id</code>, <code>start_time</code>.
+</Callout>
+
+---
+
+<h2 id="external">external <VersionBadge version="both" /></h2>
+
+<PropDef name="external" type="list" required={false} versions="V1, V2">
+  Declares references to other pipelines (local or on a remote server) that can be invoked from jobs using <code>ext:</code>.
+</PropDef>
+
+**Simple inline call** — no external section needed:
+
+```yaml
+runs_on: ubuntu
+version: 2
+
+jobs:
+  main:
+  - ext: child.yaml
+```
+
+**Named external with variables** — define an entry to pass variables or environment variables:
+
+```yaml
+runs_on: ubuntu
+version: 2
+
+external:
+- pipeline: child.yaml
+  variables:
+    some-variable: an example value
+
+jobs:
+  main:
+  - ext: child.yaml
+```
+
+**Named entries with aliases** — call the same pipeline with different configurations:
+
+```yaml
+runs_on: ubuntu
+version: 2
+
+variables:
+  some-variable: an example value
+
+external:
+- name: Call child.yaml with a variable
+  pipeline: child.yaml
+  variables:
+    some-variable: ${{some-variable}}
+
+- name: Call child.yaml on a server
+  pipeline: child.yaml
+  server: demo_server
+  variables:
+    some-variable: an example value
+
+- name: Call child-2.yaml on a server
+  pipeline: child-2.yaml
+  server: demo_server
+
+jobs:
+  main:
+  - ext: Call child.yaml with a variable
+  - ext: Call child.yaml on a server
+  - ext: Call child-2.yaml on a server
+```
+
+Pass both variables and environment variables to a child pipeline:
+
+```yaml
+external:
+- name: Execute child pipeline
+  pipeline: child.yaml
+  variables:
+  - variable1: hello
+  - variable2: ${{some_variable}}
+  environment:
+  - env1: hello world
+```
+
+<Callout type="note">
+  The external section supports expressions in <code>name</code>, <code>server</code>, <code>pipeline</code>, <code>variables</code>, and <code>environment</code> fields.
+</Callout>
+
+---
+
+<h2 id="artifacts">artifacts <VersionBadge version="both" /></h2>
+
+<PropDef name="artifacts" type="list" required={false} versions="V1, V2">
+  Transfers files to or from the execution platform during a run. Supports <code>get</code> (retrieve from container) and <code>push</code> (send to container).
+</PropDef>
+
+Retrieve a file from a container after a named step completes:
+
+```yaml
+name: Example pipeline
+runs_on: ubuntu
+version: 2
+
+artifacts:
+- method: get
+  from: /sample_file
+  to: /home/user/some_directory
+  after: Echo step
+
+jobs:
+  main:
+  - name: Echo step
+    exec:
+    - echo 'hello world' > sample_file
+  - name: Another step
+    exec:
+    - echo 'hello again'
+```
+
+Run the transfer before any jobs by omitting `after`:
+
+```yaml
+artifacts:
+- method: get
+  from: /sample_file
+  to: /home/user/some_directory
+```
+
+The `after` field can reference a job name or a named step. The `from`, `to`, and `after` fields support expressions.
+
+---
+
+<h2 id="jobs">jobs <VersionBadge version="2" /></h2>
+
+<PropDef name="jobs" type="map" required={true} versions="V2 only">
+  Defines named parallel execution units. Each job is a named list of steps that run in parallel with other jobs. Within a single job, steps run sequentially.
+</PropDef>
+
+<Callout type="note">
+  Version 1 uses sequential <code>steps</code> instead of parallel <code>jobs</code>. See <a href="/docs/pipelines/v1/#steps">Version 1 steps</a>.
+</Callout>
+
+### Parallel execution
+
+Jobs run in parallel. Each job is a named key with a list of commands:
+
+```yaml
+name: Example pipeline
+runs_on: machine
+version: 2
+
+jobs:
+  list_content_of_directories:
+  - ls ./some_directory
+  - ls ./some_other_directory
+
+  create_sample_file:
+  - echo 'hello world' > sample_file
+
+  curl_ip_address:
+  - curl ifconfig.me
+```
+
+The three jobs above run simultaneously.
+
+### Calling external pipelines
+
+Use `ext:` to invoke another pipeline from a job step:
+
+```yaml
+name: Example pipeline
+runs_on: machine
+version: 2
+
+jobs:
+  main:
+  - ext: example-pipeline-1.yaml
+  - ext: example-pipeline-2.yaml
+  - echo 'hello'
+```
+
+### Named steps
+
+Give a step a `name` and an `exec` list for clarity and artifact targeting:
+
+```yaml
+name: Example pipeline
+runs_on: machine
+version: 2
+
+jobs:
+  main:
+  - name: List directories
+    exec:
+    - ls ./some_directory
+    - ls ./some_other_directory
+
+  - name: Create file
+    exec:
+    - echo 'hello world' > sample_file
+```
+
+Named steps can mix commands and `ext:` calls:
+
+```yaml
+jobs:
+  main:
+  - name: Call another pipeline and list a directory
+    exec:
+    - ext: example-1.yaml
+    - ls ./some_directory
+```
+
+### Working directory
+
+Use `working_dir` to set the working directory for a named step:
+
+```yaml
+name: Example pipeline
+runs_on: ubuntu
+version: 2
+
+jobs:
+  main:
+  - name: First step
+    working_dir: /some/working/directory
+    exec:
+    - ls ./subdirectory
+    - rm ./subdirectory/file
+
+  - name: Second step
+    working_dir: /another/working/directory
+    exec:
+    - ls ./some-other-dir/
+```
+
+<Callout type="note">
+  Named steps can be referenced from the <code>artifacts</code> section to transfer files after that step completes.
+</Callout>
+
+---
+
+<h2 id="validation">validation</h2>
+
+Pipelines are validated before every run. Validation also runs when a pipeline is pushed to a bld server, or manually via `bld check`. Version 2 has more comprehensive validation than version 1 because it supports more fields.
+
+### runs_on
+- Checks for use of variables, environment variables, or keywords and verifies their names are defined in the pipeline.
+
+### runs_on → name / tag / dockerfile / image / docker_url
+- Checks for expression references and verifies names are defined.
+- For `dockerfile`: also checks the file path exists when no expressions are used.
+- For `docker_url`: checks that the URL matches a configured entry when no expressions are used.
+
+### runs_on → registry
+- Checks expression references.
+- If a key is provided, verifies it exists in the config file.
+
+### runs_on → ssh_config / host / port / user
+- Checks expression references.
+- For `ssh_config`: verifies the name is defined in `.bld/config.yaml` when no expressions are used.
+
+### runs_on → userauth → public_key / private_key / password
+- Checks expression references.
+- For key paths: verifies the path exists when no expressions are used.
+
+### cron
+- Checks if the defined cron syntax is a valid schedule.
+
+### variables / environment
+- Checks that no defined variable name is a built-in keyword.
+- Checks expression references — all names used must be defined in the pipeline.
+
+### external → name / pipeline / server / variables / environment
+- Checks expression references.
+- For `pipeline`: verifies the file path exists when no expressions are used.
+- For `server`: verifies the name is found in `.bld/config.yaml` when no expressions are used.
+- For variables/environment: checks that no name is a built-in keyword.
+
+### artifacts → from / to / after
+- Checks expression references.
+- For `after`: verifies the step or job name exists in the pipeline when no expressions are used.
+
+### steps → exec → ext / working_dir
+- Checks expression references.
+- For `ext`: verifies the external key is either a local pipeline file or a declared entry in the `external` section.
