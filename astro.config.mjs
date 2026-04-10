@@ -6,7 +6,7 @@ import mdx from '@astrojs/mdx';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://kani-maki-gang.github.io',
-  base: '',
+  base: 'bld-website/',
   output: 'static',
   integrations: [mdx()],
   vite: {
