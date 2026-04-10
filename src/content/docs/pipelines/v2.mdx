@@ -238,7 +238,7 @@ cron: 10 * * * * * *
 ```
 
 <Callout type="note">
-  The <code>cron</code> field schedules a run with the pipeline's default variable and environment values. For parameterized scheduled jobs, use the <a href="/docs/cli/cron/"><code>bld cron</code></a> CLI command instead.
+  The <code>cron</code> field schedules a run with the pipeline's default variable and environment values. For parameterized scheduled jobs, use the <a href={import.meta.env.BASE_URL + 'docs/cli/cron/'}><code>bld cron</code></a> CLI command instead.
 </Callout>
 
 ---
@@ -511,7 +511,7 @@ The `after` field can reference a job name or a named step. The `from`, `to`, an
 </PropDef>
 
 <Callout type="note">
-  Version 1 uses sequential <code>steps</code> instead of parallel <code>jobs</code>. See <a href="/docs/pipelines/v1/#steps">Version 1 steps</a>.
+  Version 1 uses sequential <code>steps</code> instead of parallel <code>jobs</code>. See <a href={import.meta.env.BASE_URL + 'docs/pipelines/v1/#steps'}>Version 1 steps</a>.
 </Callout>
 
 ### Parallel execution

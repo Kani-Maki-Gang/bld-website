@@ -7,14 +7,14 @@
   <div
     class="mx-auto flex h-full max-w-6xl items-center justify-between px-6"
   >
-    <a href="/" class="flex items-center gap-2.5">
-      <img src="/logo_no_bg.png" alt="Bld logo" class="size-12" />
+    <a href={import.meta.env.BASE_URL} class="flex items-center gap-2.5">
+      <img src={import.meta.env.BASE_URL + 'logo_no_bg.png'} alt="Bld logo" class="size-12" />
       <span class="text-xl font-semibold tracking-tight text-white">Bld</span>
     </a>
 
     <nav class="hidden items-center gap-1 md:flex">
       <a
-        href="/docs/"
+        href={import.meta.env.BASE_URL + 'docs/'}
         class="rounded-lg px-3 py-1.5 text-md text-zinc-400 transition-colors duration-150 hover:bg-zinc-800 hover:text-white"
       >
         Docs
@@ -38,7 +38,7 @@
     </nav>
 
     <a
-      href="/docs/getting-started/"
+      href={import.meta.env.BASE_URL + 'docs/getting-started/'}
       class="inline-flex h-[38px] items-center rounded-lg bg-violet-600 px-4 text-sm font-medium text-white transition-colors duration-150 hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
     >
       Get Started

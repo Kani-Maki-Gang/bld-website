@@ -10,17 +10,17 @@ In the info page the user can see the actual pipeline file, runs and crons jobs 
 ## Raw file view
 
 <p align="center">
-    <img style="text-align: center;" height="400" width="800" src="/assets/ui/pipelines_info_raw_file.png">
+    <img style="text-align: center;" height="400" width="800" src="/bld-website/assets/ui/pipelines_info_raw_file.png">
 </p>
 
 ## History view
 
 <p align="center">
-    <img style="text-align: center;" height="400" width="800" src="/assets/ui/pipelines_info_history.png">
+    <img style="text-align: center;" height="400" width="800" src="/bld-website/assets/ui/pipelines_info_history.png">
 </p>
 
 ## Cron jobs view
 
 <p align="center">
-    <img style="text-align: center;" height="400" width="800" src="/assets/ui/pipelines_info_cron.png">
+    <img style="text-align: center;" height="400" width="800" src="/bld-website/assets/ui/pipelines_info_cron.png">
 </p>

@@ -53,7 +53,7 @@ const crumbs = buildCrumbs(currentSlug);
 
 {crumbs.length > 0 && (
   <nav aria-label="Breadcrumb" class="mb-6 flex items-center gap-1.5 text-sm text-zinc-500">
-    <a href="/docs/" class="hover:text-zinc-300 transition-colors duration-150">Docs</a>
+    <a href={import.meta.env.BASE_URL + 'docs/'} class="hover:text-zinc-300 transition-colors duration-150">Docs</a>
     {crumbs.map((crumb, i) => (
       <>
         <i class="iconoir-nav-arrow-right text-xs"></i>
